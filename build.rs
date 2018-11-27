@@ -376,6 +376,8 @@ fn check_features(
 
     //let stdout = contents.unwrap();
 
+    println!("use check.txt test...");
+
     println!("stdout={}", stdout);
 
     for &(_, feature, var) in infos {
