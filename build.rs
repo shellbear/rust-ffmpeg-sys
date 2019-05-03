@@ -342,7 +342,7 @@ fn check_features(
         main_code = main_code
     ).expect("Write failed");
 
-    /*let executable = out_dir.join(if cfg!(windows) { "check.exe" } else { "check" });
+    let executable = out_dir.join(if cfg!(windows) { "check.exe" } else { "check" });
     let mut compiler = cc::Build::new().get_compiler().to_command();
 
     for dir in include_paths {
@@ -366,17 +366,17 @@ fn check_features(
         .output()
         .expect("Check failed")
         .stdout;
-    let stdout = str::from_utf8(stdout_raw.as_slice()).unwrap();*/
+    let stdout = str::from_utf8(stdout_raw.as_slice()).unwrap();
 
-    let mut f = File::open("check.txt").expect("check.txt file not found!");
+    //let mut f = File::open("check.txt").expect("check.txt file not found!");
 
-    let mut stdout = String::new();
-    f.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
+    /*let mut stdout = String::new();
+    f.read_to_string(&mut stdout)
+        .expect("something went wrong reading the file");*/
 
-    //let stdout = contents.unwrap();
+    let stdout = contents.unwrap();
 
-    println!("use check.txt test...");
+    //println!("use check.txt test...");
 
     println!("stdout={}", stdout);
 
