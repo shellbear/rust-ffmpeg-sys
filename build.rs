@@ -75,6 +75,8 @@ fn search() -> PathBuf {
 }
 
 fn fetch() -> io::Result<()> {
+    println!("Fetch FFmpeg Version {:?} from Git", version());
+
     let status = try!(
         Command::new("git")
             .current_dir(&output())
@@ -94,6 +96,7 @@ fn fetch() -> io::Result<()> {
 }
 
 fn build() -> io::Result<()> {
+    println!("Start build");
     let mut configure = Command::new("./configure");
     configure.current_dir(&source());
     configure.arg(format!("--prefix={}", search().to_string_lossy()));
@@ -450,7 +453,7 @@ fn main() {
             "cargo:rustc-link-search=native={}",
             search().join("lib").to_string_lossy()
         );
-
+        println!("FFMPEG-SYS get build...");
         let ffmpeg_ty = if statik { "static" } else { "dylib" };
 
         // Make sure to link with the ffmpeg libs we built
@@ -525,6 +528,8 @@ fn main() {
     }
     // Fallback to pkg-config
     else {
+        println!("fallback to pkg-config");
+
         pkg_config::Config::new()
             .statik(statik)
             .probe("libavutil")
