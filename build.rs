@@ -484,6 +484,9 @@ fn main() {
             println!("cargo:rustc-link-lib=z");
         }
 
+        println!("cargo:rustc-link-lib=m");
+        println!("cargo:rustc-link-lib=va");
+
         if fs::metadata(&search().join("lib").join("libavutil.a")).is_err() {
             fs::create_dir_all(&output())
                 .ok()
