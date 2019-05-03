@@ -374,7 +374,7 @@ fn check_features(
     f.read_to_string(&mut stdout)
         .expect("something went wrong reading the file");*/
 
-    let stdout = contents.unwrap();
+    //let stdout = contents.unwrap();
 
     //println!("use check.txt test...");
 
