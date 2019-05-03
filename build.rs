@@ -6,7 +6,7 @@ extern crate regex;
 
 use std::env;
 use std::fs::{self, create_dir, symlink_metadata, File};
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Write, Read};
 use std::path::PathBuf;
 use std::process::Command;
 use std::str;
