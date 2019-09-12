@@ -6,13 +6,13 @@ extern crate regex;
 
 use std::env;
 use std::fs::{self, create_dir, symlink_metadata, File};
-use std::io::{self, BufRead, BufReader, Write, Read};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use std::str;
 
+use bindgen::callbacks::{IntKind, MacroParsingBehavior, ParseCallbacks};
 use regex::Regex;
-use bindgen::callbacks::{IntKind, ParseCallbacks};
 
 #[derive(Debug)]
 struct IntCallbacks;
@@ -41,6 +41,15 @@ impl ParseCallbacks for IntCallbacks {
             Some(IntKind::Int)
         } else {
             None
+        }
+    }
+
+    fn will_parse_macro(&self, name: &str) -> MacroParsingBehavior {
+        match name {
+            "FP_NAN" | "FP_INFINITE" | "FP_ZERO" | "FP_SUBNORMAL" | "FP_NORMAL" => {
+                MacroParsingBehavior::Ignore
+            }
+            _ => MacroParsingBehavior::Default,
         }
     }
 }
@@ -486,6 +495,7 @@ fn main() {
 
         println!("cargo:rustc-link-lib=m");
         println!("cargo:rustc-link-lib=va");
+        println!("cargo:rustc-link-lib=xcb");
 
         if fs::metadata(&search().join("lib").join("libavutil.a")).is_err() {
             fs::create_dir_all(&output())
