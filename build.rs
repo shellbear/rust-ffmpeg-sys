@@ -510,16 +510,38 @@ fn main() {
             let config_mak = source().join("ffbuild/config.mak");
             let file = File::open(config_mak).unwrap();
             let reader = BufReader::new(file);
-            let extra_libs = reader
-                .lines()
-                .find(|ref line| line.as_ref().unwrap().starts_with("EXTRALIBS"))
-                .map(|line| line.unwrap())
-                .unwrap();
 
-            let linker_args = extra_libs.split('=').last().unwrap().split(' ');
-            let include_libs = linker_args
-                .filter(|v| v.starts_with("-l"))
-                .map(|flag| &flag[2..]);
+            let mut include_libs = Vec::new();
+            for line in reader.lines() {
+                if !line.as_ref().unwrap().starts_with("EXTRALIBS") {
+                    continue;
+                }
+                let line = line.unwrap();
+                let mut split = line.splitn(2, '=');
+                let lib = split.next().unwrap().split('-').last().unwrap();
+                let linker_args = split.next().unwrap();
+
+                // the key EXTRALIBS on its own should be linked unconditionally
+                // avutil is always built
+                if lib != "EXTRALIBS" && lib != "avutil" {
+                    // check feature flag if we need to link these libs
+                    let feature = format!("CARGO_FEATURE_{}", lib.to_uppercase());
+                    if env::var(feature).is_err() {
+                        continue;
+                    }
+                }
+
+                let linker_args = linker_args
+                    .split(' ')
+                    .filter(|v| v.starts_with("-l"))
+                    .map(|flag| &flag[2..])
+                    .map(|lib| lib.to_owned());
+                for lib in linker_args {
+                    if !include_libs.contains(&lib) {
+                        include_libs.push(lib);
+                    }
+                }
+            }
 
             for lib in include_libs {
                 println!("cargo:rustc-link-lib={}", lib);
