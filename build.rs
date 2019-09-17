@@ -107,6 +107,18 @@ fn fetch() -> io::Result<()> {
 fn build() -> io::Result<()> {
     println!("Start build");
     let mut configure = Command::new("./configure");
+
+    if env::var("TARGET").unwrap().contains("windows") {
+        let target = env::var("TARGET").unwrap();
+        if target.contains("-msvc") {
+            configure.arg("--toolchain=msvc");
+        }
+        if target.contains("x86_64") {
+            configure.arg("--target-os=win64");
+            configure.arg("--arch=x86_64");
+        }
+    }
+
     configure.current_dir(&source());
     configure.arg(format!("--prefix={}", search().to_string_lossy()));
 
