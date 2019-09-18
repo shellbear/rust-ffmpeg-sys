@@ -106,65 +106,59 @@ fn fetch() -> io::Result<()> {
 
 fn build() -> io::Result<()> {
     println!("Start build");
-    let mut configure = if env::var("TARGET").unwrap().contains("windows") {
-        let mut configure = Command::new("sh");
-        configure.arg("-c");
-        configure.arg("./configure");
+    let mut args = Vec::new();
+
+    if env::var("TARGET").unwrap().contains("windows") {
         let target = env::var("TARGET").unwrap();
         if target.contains("-msvc") {
-            configure.arg("--toolchain=msvc");
+            args.push("--toolchain=msvc".into());
         }
         if target.contains("x86_64") {
-            configure.arg("--target-os=win64");
-            configure.arg("--arch=x86_64");
+            args.push("--target-os=win64".into());
+            args.push("--arch=x86_64".into());
         }
-        configure
-    } else {
-        Command::new("./configure")
-    };
+    }
 
-    configure.current_dir(&source());
-    configure.arg(format!("--prefix={}", search().to_string_lossy()));
+    args.push(format!("--prefix={}", search().to_string_lossy()));
 
     if env::var("TARGET").unwrap() != env::var("HOST").unwrap() {
-        configure.arg(format!("--cross-prefix={}-", env::var("TARGET").unwrap()));
+        args.push(format!("--cross-prefix={}-", env::var("TARGET").unwrap()));
     }
 
     // control debug build
     if env::var("DEBUG").is_ok() {
-        configure.arg("--enable-debug");
-        configure.arg("--disable-stripping");
+        args.push("--enable-debug".into());
+        args.push("--disable-stripping".into());
     } else {
-        configure.arg("--disable-debug");
-        configure.arg("--enable-stripping");
+        args.push("--disable-debug".into());
+        args.push("--enable-stripping".into());
     }
 
     // make it static
-    configure.arg("--enable-static");
-    configure.arg("--disable-shared");
+    args.push("--enable-static".into());
+    args.push("--disable-shared".into());
 
-    configure.arg("--enable-pic");
+    args.push("--enable-pic".into());
 
     // do not build programs since we don't need them
-    configure.arg("--disable-programs");
+    args.push("--disable-programs".into());
 
     macro_rules! switch {
-        ($conf:expr, $feat:expr, $name:expr) => (
+        ($conf:expr, $feat:expr, $name:expr) => {
             if env::var(concat!("CARGO_FEATURE_", $feat)).is_ok() {
-                $conf.arg(concat!("--enable-", $name));
+                $conf.push(concat!("--enable-", $name).into());
+            } else {
+                $conf.push(concat!("--disable-", $name).into());
             }
-            else {
-                $conf.arg(concat!("--disable-", $name));
-            }
-        )
+        };
     }
 
     macro_rules! enable {
-        ($conf:expr, $feat:expr, $name:expr) => (
+        ($conf:expr, $feat:expr, $name:expr) => {
             if env::var(concat!("CARGO_FEATURE_", $feat)).is_ok() {
-                $conf.arg(concat!("--enable-", $name));
+                $conf.push(concat!("--enable-", $name).into());
             }
-        )
+        };
     }
 
     // macro_rules! disable {
@@ -176,85 +170,94 @@ fn build() -> io::Result<()> {
     // }
 
     // the binary using ffmpeg-sys must comply with GPL
-    switch!(configure, "BUILD_LICENSE_GPL", "gpl");
+    switch!(args, "BUILD_LICENSE_GPL", "gpl");
 
     // the binary using ffmpeg-sys must comply with (L)GPLv3
-    switch!(configure, "BUILD_LICENSE_VERSION3", "version3");
+    switch!(args, "BUILD_LICENSE_VERSION3", "version3");
 
     // the binary using ffmpeg-sys cannot be redistributed
-    switch!(configure, "BUILD_LICENSE_NONFREE", "nonfree");
+    switch!(args, "BUILD_LICENSE_NONFREE", "nonfree");
 
     // configure building libraries based on features
-    switch!(configure, "AVCODEC", "avcodec");
-    switch!(configure, "AVDEVICE", "avdevice");
-    switch!(configure, "AVFILTER", "avfilter");
-    switch!(configure, "AVFORMAT", "avformat");
-    switch!(configure, "AVRESAMPLE", "avresample");
-    switch!(configure, "POSTPROC", "postproc");
-    switch!(configure, "SWRESAMPLE", "swresample");
-    switch!(configure, "SWSCALE", "swscale");
+    switch!(args, "AVCODEC", "avcodec");
+    switch!(args, "AVDEVICE", "avdevice");
+    switch!(args, "AVFILTER", "avfilter");
+    switch!(args, "AVFORMAT", "avformat");
+    switch!(args, "AVRESAMPLE", "avresample");
+    switch!(args, "POSTPROC", "postproc");
+    switch!(args, "SWRESAMPLE", "swresample");
+    switch!(args, "SWSCALE", "swscale");
 
     // configure external SSL libraries
-    enable!(configure, "BUILD_LIB_GNUTLS", "gnutls");
-    enable!(configure, "BUILD_LIB_OPENSSL", "openssl");
+    enable!(args, "BUILD_LIB_GNUTLS", "gnutls");
+    enable!(args, "BUILD_LIB_OPENSSL", "openssl");
 
     // configure external filters
-    enable!(configure, "BUILD_LIB_FONTCONFIG", "fontconfig");
-    enable!(configure, "BUILD_LIB_FREI0R", "frei0r");
-    enable!(configure, "BUILD_LIB_LADSPA", "ladspa");
-    enable!(configure, "BUILD_LIB_ASS", "libass");
-    enable!(configure, "BUILD_LIB_FREETYPE", "libfreetype");
-    enable!(configure, "BUILD_LIB_FRIBIDI", "libfribidi");
-    enable!(configure, "BUILD_LIB_OPENCV", "libopencv");
+    enable!(args, "BUILD_LIB_FONTCONFIG", "fontconfig");
+    enable!(args, "BUILD_LIB_FREI0R", "frei0r");
+    enable!(args, "BUILD_LIB_LADSPA", "ladspa");
+    enable!(args, "BUILD_LIB_ASS", "libass");
+    enable!(args, "BUILD_LIB_FREETYPE", "libfreetype");
+    enable!(args, "BUILD_LIB_FRIBIDI", "libfribidi");
+    enable!(args, "BUILD_LIB_OPENCV", "libopencv");
 
     // configure external encoders/decoders
-    enable!(configure, "BUILD_LIB_AACPLUS", "libaacplus");
-    enable!(configure, "BUILD_LIB_CELT", "libcelt");
-    enable!(configure, "BUILD_LIB_DCADEC", "libdcadec");
-    enable!(configure, "BUILD_LIB_FAAC", "libfaac");
-    enable!(configure, "BUILD_LIB_FDK_AAC", "libfdk-aac");
-    enable!(configure, "BUILD_LIB_GSM", "libgsm");
-    enable!(configure, "BUILD_LIB_ILBC", "libilbc");
-    enable!(configure, "BUILD_LIB_VAZAAR", "libvazaar");
-    enable!(configure, "BUILD_LIB_MP3LAME", "libmp3lame");
-    enable!(configure, "BUILD_LIB_OPENCORE_AMRNB", "libopencore-amrnb");
-    enable!(configure, "BUILD_LIB_OPENCORE_AMRWB", "libopencore-amrwb");
-    enable!(configure, "BUILD_LIB_OPENH264", "libopenh264");
-    enable!(configure, "BUILD_LIB_OPENH265", "libopenh265");
-    enable!(configure, "BUILD_LIB_OPENJPEG", "libopenjpeg");
-    enable!(configure, "BUILD_LIB_OPUS", "libopus");
-    enable!(configure, "BUILD_LIB_SCHROEDINGER", "libschroedinger");
-    enable!(configure, "BUILD_LIB_SHINE", "libshine");
-    enable!(configure, "BUILD_LIB_SNAPPY", "libsnappy");
-    enable!(configure, "BUILD_LIB_SPEEX", "libspeex");
-    enable!(
-        configure,
-        "BUILD_LIB_STAGEFRIGHT_H264",
-        "libstagefright-h264"
-    );
-    enable!(configure, "BUILD_LIB_THEORA", "libtheora");
-    enable!(configure, "BUILD_LIB_TWOLAME", "libtwolame");
-    enable!(configure, "BUILD_LIB_UTVIDEO", "libutvideo");
-    enable!(configure, "BUILD_LIB_VO_AACENC", "libvo-aacenc");
-    enable!(configure, "BUILD_LIB_VO_AMRWBENC", "libvo-amrwbenc");
-    enable!(configure, "BUILD_LIB_VORBIS", "libvorbis");
-    enable!(configure, "BUILD_LIB_VPX", "libvpx");
-    enable!(configure, "BUILD_LIB_WAVPACK", "libwavpack");
-    enable!(configure, "BUILD_LIB_WEBP", "libwebp");
-    enable!(configure, "BUILD_LIB_X264", "libx264");
-    enable!(configure, "BUILD_LIB_X265", "libx265");
-    enable!(configure, "BUILD_LIB_AVS", "libavs");
-    enable!(configure, "BUILD_LIB_XVID", "libxvid");
+    enable!(args, "BUILD_LIB_AACPLUS", "libaacplus");
+    enable!(args, "BUILD_LIB_CELT", "libcelt");
+    enable!(args, "BUILD_LIB_DCADEC", "libdcadec");
+    enable!(args, "BUILD_LIB_FAAC", "libfaac");
+    enable!(args, "BUILD_LIB_FDK_AAC", "libfdk-aac");
+    enable!(args, "BUILD_LIB_GSM", "libgsm");
+    enable!(args, "BUILD_LIB_ILBC", "libilbc");
+    enable!(args, "BUILD_LIB_VAZAAR", "libvazaar");
+    enable!(args, "BUILD_LIB_MP3LAME", "libmp3lame");
+    enable!(args, "BUILD_LIB_OPENCORE_AMRNB", "libopencore-amrnb");
+    enable!(args, "BUILD_LIB_OPENCORE_AMRWB", "libopencore-amrwb");
+    enable!(args, "BUILD_LIB_OPENH264", "libopenh264");
+    enable!(args, "BUILD_LIB_OPENH265", "libopenh265");
+    enable!(args, "BUILD_LIB_OPENJPEG", "libopenjpeg");
+    enable!(args, "BUILD_LIB_OPUS", "libopus");
+    enable!(args, "BUILD_LIB_SCHROEDINGER", "libschroedinger");
+    enable!(args, "BUILD_LIB_SHINE", "libshine");
+    enable!(args, "BUILD_LIB_SNAPPY", "libsnappy");
+    enable!(args, "BUILD_LIB_SPEEX", "libspeex");
+    enable!(args, "BUILD_LIB_STAGEFRIGHT_H264", "libstagefright-h264");
+    enable!(args, "BUILD_LIB_THEORA", "libtheora");
+    enable!(args, "BUILD_LIB_TWOLAME", "libtwolame");
+    enable!(args, "BUILD_LIB_UTVIDEO", "libutvideo");
+    enable!(args, "BUILD_LIB_VO_AACENC", "libvo-aacenc");
+    enable!(args, "BUILD_LIB_VO_AMRWBENC", "libvo-amrwbenc");
+    enable!(args, "BUILD_LIB_VORBIS", "libvorbis");
+    enable!(args, "BUILD_LIB_VPX", "libvpx");
+    enable!(args, "BUILD_LIB_WAVPACK", "libwavpack");
+    enable!(args, "BUILD_LIB_WEBP", "libwebp");
+    enable!(args, "BUILD_LIB_X264", "libx264");
+    enable!(args, "BUILD_LIB_X265", "libx265");
+    enable!(args, "BUILD_LIB_AVS", "libavs");
+    enable!(args, "BUILD_LIB_XVID", "libxvid");
 
     // other external libraries
-    enable!(configure, "BUILD_NVENC", "nvenc");
+    enable!(args, "BUILD_NVENC", "nvenc");
 
     // configure external protocols
-    enable!(configure, "BUILD_LIB_SMBCLIENT", "libsmbclient");
-    enable!(configure, "BUILD_LIB_SSH", "libssh");
+    enable!(args, "BUILD_LIB_SMBCLIENT", "libsmbclient");
+    enable!(args, "BUILD_LIB_SSH", "libssh");
 
     // configure misc build options
-    enable!(configure, "BUILD_PIC", "pic");
+    enable!(args, "BUILD_PIC", "pic");
+
+    let mut configure = if env::var("TARGET").unwrap().contains("windows") {
+        let mut arg = String::from("./configure ");
+        arg.push_str(&args.join(" "));
+        let mut configure = Command::new("sh");
+        configure.arg("-c").arg(arg);
+        configure
+    } else {
+        let mut configure = Command::new("./configure");
+        configure.args(args);
+        configure
+    };
+    configure.current_dir(&source());
 
     // run ./configure
     let output = configure
