@@ -248,7 +248,17 @@ fn build() -> io::Result<()> {
 
     let mut configure = if env::var("TARGET").unwrap().contains("windows") {
         let mut arg = String::from("./configure ");
-        arg.push_str(&args.join(" "));
+        arg.push_str(
+            &args
+                .iter()
+                .map(|a| {
+                    a.replace('\\', "\\\\")
+                        .replace(' ', "\\ ")
+                        .replace('\"', "\\\"")
+                })
+                .collect::<Vec<_>>()
+                .join(" "),
+        );
         let mut configure = Command::new("sh");
         configure.arg("-c").arg(arg);
         configure
