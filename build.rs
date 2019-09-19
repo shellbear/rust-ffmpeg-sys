@@ -555,12 +555,17 @@ fn main() {
                     }
                 }
 
-                let linker_args = linker_args
-                    .split(' ')
-                    .filter(|v| v.starts_with("-l"))
-                    .map(|flag| &flag[2..])
-                    .map(|lib| lib.to_owned());
-                for lib in linker_args {
+                let libs: Vec<_> = if env::var("TARGET").unwrap().contains("windows") {
+                    linker_args.split(' ').map(|lib| lib.to_owned()).collect()
+                } else {
+                    linker_args
+                        .split(' ')
+                        .filter(|v| v.starts_with("-l"))
+                        .map(|flag| &flag[2..])
+                        .map(|lib| lib.to_owned())
+                        .collect()
+                };
+                for lib in libs {
                     if !include_libs.contains(&lib) {
                         include_libs.push(lib);
                     }
