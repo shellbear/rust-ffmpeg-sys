@@ -117,9 +117,18 @@ fn build() -> io::Result<()> {
             args.push("--target-os=win64".into());
             args.push("--arch=x86_64".into());
         }
+        args.push(format!(
+            "--prefix=/{}",
+            search()
+                .to_string_lossy()
+                .replace(':', "")
+                .replace('\\', "/")
+                .replace(' ', "\\ ")
+                .replace('"', "\\\"")
+        ));
+    } else {
+        args.push(format!("--prefix={}", search().to_string_lossy()));
     }
-
-    args.push(format!("--prefix={}", search().to_string_lossy()));
 
     if env::var("TARGET").unwrap() != env::var("HOST").unwrap() {
         args.push(format!("--cross-prefix={}-", env::var("TARGET").unwrap()));
@@ -248,17 +257,7 @@ fn build() -> io::Result<()> {
 
     let mut configure = if env::var("TARGET").unwrap().contains("windows") {
         let mut arg = String::from("./configure ");
-        arg.push_str(
-            &args
-                .iter()
-                .map(|a| {
-                    a.replace('\\', "\\\\")
-                        .replace(' ', "\\ ")
-                        .replace('\"', "\\\"")
-                })
-                .collect::<Vec<_>>()
-                .join(" "),
-        );
+        arg.push_str(&args.join(" "));
         let mut configure = Command::new("sh");
         configure.arg("-c").arg(arg);
         configure
