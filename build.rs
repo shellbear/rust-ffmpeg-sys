@@ -558,7 +558,8 @@ fn main() {
                 let libs: Vec<_> = if env::var("TARGET").unwrap().contains("windows") {
                     linker_args
                         .split(' ')
-                        .filter(|v| !v.trim().is_empty())
+                        .filter(|v| v.ends_with(".lib"))
+                        .map(|lib| &lib[..lib.len() - 4])
                         .map(|lib| lib.to_owned())
                         .collect()
                 } else {
