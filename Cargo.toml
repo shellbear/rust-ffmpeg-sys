@@ -97,3 +97,8 @@ avresample = []
 postproc   = []
 swresample = []
 swscale    = []
+
+# programs
+ffmpeg  = []
+ffplay  = []
+ffprobe = []

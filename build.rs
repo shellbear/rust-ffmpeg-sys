@@ -149,9 +149,6 @@ fn build() -> io::Result<()> {
 
     args.push("--enable-pic".into());
 
-    // do not build programs since we don't need them
-    args.push("--disable-programs".into());
-
     macro_rules! switch {
         ($conf:expr, $feat:expr, $name:expr) => {
             if env::var(concat!("CARGO_FEATURE_", $feat)).is_ok() {
@@ -196,6 +193,11 @@ fn build() -> io::Result<()> {
     switch!(args, "POSTPROC", "postproc");
     switch!(args, "SWRESAMPLE", "swresample");
     switch!(args, "SWSCALE", "swscale");
+
+    // configure building programs based on features
+    switch!(args, "FFMPEG", "ffmpeg");
+    switch!(args, "FFPLAY", "ffplay");
+    switch!(args, "FFPROBE", "ffprobe");
 
     // configure external SSL libraries
     enable!(args, "BUILD_LIB_GNUTLS", "gnutls");
