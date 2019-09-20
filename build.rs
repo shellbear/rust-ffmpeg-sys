@@ -586,6 +586,33 @@ fn main() {
             }
         }
 
+        // copy binaries to output
+        {
+            let binaries = vec![
+                ("ffmpeg", "FFMPEG"),
+                ("ffplay", "FFPLAY"),
+                ("ffprobe", "FFPROBE"),
+            ];
+            for (bin, feature) in binaries {
+                if env::var(format!("CARGO_FEATURE_{}", feature)).is_ok() {
+                    let bin_path = search().join("bin").join(bin);
+                    let out_path = output()
+                        .parent()
+                        .unwrap()
+                        .parent()
+                        .unwrap()
+                        .parent()
+                        .unwrap()
+                        .join(bin);
+                    if out_path.exists() {
+                        fs::remove_file(out_path.clone())
+                            .expect(&format!("failed to remove {}", bin));
+                    }
+                    fs::copy(bin_path, out_path).expect(&format!("failed to copy {}", bin));
+                }
+            }
+        }
+
         vec![search().join("include")]
     }
     // Use prebuilt library
