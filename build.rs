@@ -597,7 +597,12 @@ fn main() {
             ];
             for (bin, feature) in binaries {
                 if env::var(format!("CARGO_FEATURE_{}", feature)).is_ok() {
-                    let bin_path = search().join("bin").join(bin);
+                    let bin = if env::var("TARGET").unwrap().contains("windows") {
+                        PathBuf::from(bin).with_extension("exe")
+                    } else {
+                        PathBuf::from(bin)
+                    };
+                    let bin_path = search().join("bin").join(&bin);
                     let out_path = output()
                         .parent()
                         .unwrap()
@@ -605,12 +610,16 @@ fn main() {
                         .unwrap()
                         .parent()
                         .unwrap()
-                        .join(bin);
+                        .join(&bin);
                     if out_path.exists() {
-                        fs::remove_file(out_path.clone())
-                            .expect(&format!("failed to remove {}", bin));
+                        fs::remove_file(&out_path)
+                            .expect(&format!("failed to remove {}", out_path.to_string_lossy()));
                     }
-                    fs::copy(bin_path, out_path).expect(&format!("failed to copy {}", bin));
+                    fs::copy(&bin_path, &out_path).expect(&format!(
+                        "failed to copy {} to {}",
+                        bin_path.to_string_lossy(),
+                        out_path.to_string_lossy()
+                    ));
                 }
             }
         }
