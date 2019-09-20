@@ -86,16 +86,18 @@ fn search() -> PathBuf {
 fn fetch() -> io::Result<()> {
     println!("Fetch FFmpeg Version {:?} from Git", version());
 
-    let status = try!(
-        Command::new("git")
-            .current_dir(&output())
-            .arg("clone")
-            .arg("-b")
-            .arg(format!("release/{}", version()))
-            .arg("https://github.com/FFmpeg/FFmpeg")
-            .arg(format!("ffmpeg-{}", version()))
-            .status()
-    );
+    let target = output().join(format!("ffmpeg-{}", version()));
+    if target.exists() {
+        fs::remove_dir_all(target)?;
+    }
+    let status = Command::new("git")
+        .current_dir(&output())
+        .arg("clone")
+        .arg("-b")
+        .arg(format!("release/{}", version()))
+        .arg("https://github.com/FFmpeg/FFmpeg")
+        .arg(format!("ffmpeg-{}", version()))
+        .status()?;
 
     if status.success() {
         Ok(())
