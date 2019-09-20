@@ -38,8 +38,10 @@ build-pic   = ["build"]
 build-zlib  = ["build"]
 
 # ssl
-build-lib-gnutls  = ["build"]
-build-lib-openssl = ["build"]
+build-lib-gnutls          = ["build"]
+build-lib-openssl         = ["build"]
+build-lib-schannel        = ["build"]
+build-lib-securetransport = ["build"]
 
 # filters
 build-lib-fontconfig = ["build"]

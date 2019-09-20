@@ -204,6 +204,8 @@ fn build() -> io::Result<()> {
     // configure external SSL libraries
     enable!(args, "BUILD_LIB_GNUTLS", "gnutls");
     enable!(args, "BUILD_LIB_OPENSSL", "openssl");
+    enable!(args, "BUILD_LIB_SCHANNEL", "schannel");
+    enable!(args, "BUILD_LIB_SECURETRANSPORT", "securetransport");
 
     // configure external filters
     enable!(args, "BUILD_LIB_FONTCONFIG", "fontconfig");
